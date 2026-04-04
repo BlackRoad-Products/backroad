@@ -2,8 +2,8 @@ const ROOT_HTML = `<!-- PROPRIETARY. Copyright 2025-2026 BlackRoad OS, Inc. All 
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BackRoad — BlackRoad OS</title>
-<meta name="description" content="BackRoad — Social Automation. Part of BlackRoad OS.">
-<meta property="og:title" content="BackRoad — BlackRoad OS"><meta property="og:description" content="The scenic route. Your content, everywhere.">
+<meta name="description" content="Sovereign social network with posts, DMs, groups, chat rooms, polls, and AI-powered content. No ads, no tracking, no algorithms. Your feed, your rules.">
+<meta property="og:title" content="BackRoad — Sovereign Social Network — BlackRoad OS"><meta property="og:description" content="Posts, DMs, groups, chat rooms, polls, and AI content. No ads, no tracking. Your feed, your rules.">
 <meta property="og:url" content="https://backroad.blackroad.io"><meta property="og:image" content="https://images.blackroad.io/pixel-art/road-logo.png">
 <meta name="twitter:card" content="summary_large_image"><meta name="robots" content="index, follow, noai, noimageai">
 <link rel="canonical" href="https://backroad.blackroad.io/">
