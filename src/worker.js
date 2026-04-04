@@ -41,6 +41,14 @@ const ROOT_HTML = `<!-- PROPRIETARY. Copyright 2025-2026 BlackRoad OS, Inc. All 
 <div class="feat"><h3>Content Scoring</h3><p>AI-powered content quality scoring before publishing. Engagement prediction, readability, and brand alignment.</p><code>POST /api/score</code></div>
 <div class="feat"><h3>Viral Tracker</h3><p>Detect when posts are going viral with sudden engagement spikes. Alert system for trending content.</p><code>GET /api/viral</code></div>
 <div class="feat"><h3>Campaign ROI</h3><p>Track campaign costs, conversions, and calculate ROI. Attribution modeling across platforms.</p><code>POST /api/roi</code></div>
+<div class="feat"><h3>Story Generator</h3><p>AI-generated brand stories with narrative arcs, character integration with Roadie agents, and customizable themes.</p><code>POST /api/story</code></div>
+<div class="feat"><h3>Meme Generator</h3><p>AI-powered meme creation with trending templates, caption generation, and brand-safe content filters.</p><code>POST /api/memes</code></div>
+<div class="feat"><h3>Social Listening</h3><p>Monitor keywords and topics across platforms. Get alerts on brand mentions and trending conversations.</p><code>GET /api/listening</code></div>
+<div class="feat"><h3>UGC Manager</h3><p>Collect and curate user-generated content. Rights management, feature requests, and content approval workflows.</p><code>GET /api/ugc</code></div>
+<div class="feat"><h3>Engagement Automation</h3><p>Auto-like, auto-reply rules based on keywords and sentiment. Set it and let the agents handle it.</p><code>GET /api/auto-engage</code></div>
+<div class="feat"><h3>Platform Insights</h3><p>Per-platform deep analytics including best formats, optimal posting frequency, and audience behavior patterns.</p><code>GET /api/insights</code></div>
+<div class="feat"><h3>Collaboration Requests</h3><p>Manage inbound and outbound brand collaboration requests. Track status, terms, and deliverables.</p><code>GET /api/collab-requests</code></div>
+<div class="feat"><h3>Social Proof</h3><p>Testimonials, case studies, and metrics badges for embedding on websites. Build trust at scale.</p><code>GET /api/social-proof</code></div>
 </div></section>
 
 <footer><div class="f-links"><a href="https://os.blackroad.io">OS</a><a href="https://roadtrip.blackroad.io">Agents</a><a href="https://roadie.blackroad.io">Tutor</a><a href="https://roadview.blackroad.io">Search</a><a href="https://backroad.blackroad.io">Social</a><a href="https://roadchain.blackroad.io">Chain</a><a href="https://github.com/BlackRoadOS">GitHub</a></div><div class="f-copy">2025-2026 BlackRoad OS, Inc. Remember the Road. Pave Tomorrow.</div></footer>
@@ -232,6 +240,91 @@ async function ensureNewTables(db) {
       created_at TEXT DEFAULT (datetime('now'))
     )`),
   ]);
+
+  // Phase 3 tables
+  await db.batch([
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_stories (
+      id TEXT PRIMARY KEY, title TEXT NOT NULL, theme TEXT DEFAULT 'brand',
+      narrative TEXT NOT NULL, characters TEXT DEFAULT '[]',
+      genre TEXT DEFAULT 'origin', mood TEXT DEFAULT 'inspiring',
+      word_count INT DEFAULT 0, agent_id TEXT, agent_name TEXT,
+      tags TEXT DEFAULT '[]', status TEXT DEFAULT 'draft',
+      created_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_memes (
+      id TEXT PRIMARY KEY, template TEXT NOT NULL, top_text TEXT,
+      bottom_text TEXT, caption TEXT, style TEXT DEFAULT 'classic',
+      platform TEXT DEFAULT 'x', agent_id TEXT, agent_name TEXT,
+      tags TEXT DEFAULT '[]', usage_count INT DEFAULT 0,
+      trending_score REAL DEFAULT 0, brand_safe INT DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_listening (
+      id TEXT PRIMARY KEY, keyword TEXT NOT NULL, platform TEXT DEFAULT 'all',
+      match_type TEXT DEFAULT 'contains', alert_enabled INT DEFAULT 1,
+      alert_threshold INT DEFAULT 5, mentions_count INT DEFAULT 0,
+      sentiment_avg REAL DEFAULT 0, last_mention TEXT,
+      status TEXT DEFAULT 'active',
+      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_listening_mentions (
+      id TEXT PRIMARY KEY, keyword_id TEXT NOT NULL, platform TEXT,
+      source_handle TEXT, source_name TEXT, content TEXT NOT NULL,
+      url TEXT, sentiment_score REAL DEFAULT 0, sentiment_label TEXT DEFAULT 'neutral',
+      flagged INT DEFAULT 0, responded INT DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_ugc (
+      id TEXT PRIMARY KEY, content TEXT NOT NULL, content_type TEXT DEFAULT 'text',
+      source_platform TEXT, source_handle TEXT, source_name TEXT, source_url TEXT,
+      rights_status TEXT DEFAULT 'pending', rights_granted_at TEXT,
+      rights_notes TEXT, featured INT DEFAULT 0, approved INT DEFAULT 0,
+      tags TEXT DEFAULT '[]', campaign_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_auto_engage (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, type TEXT DEFAULT 'auto-reply',
+      trigger_keywords TEXT DEFAULT '[]', trigger_sentiment TEXT,
+      platform TEXT DEFAULT 'all', action TEXT DEFAULT 'reply',
+      response_template TEXT, agent_id TEXT DEFAULT 'aria',
+      max_per_hour INT DEFAULT 10, executions INT DEFAULT 0,
+      active INT DEFAULT 1,
+      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_auto_engage_log (
+      id TEXT PRIMARY KEY, rule_id TEXT NOT NULL, trigger_content TEXT,
+      response_content TEXT, platform TEXT, target_handle TEXT,
+      agent_name TEXT, sentiment_score REAL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_insights (
+      id TEXT PRIMARY KEY, platform TEXT NOT NULL, metric_type TEXT NOT NULL,
+      metric_value TEXT NOT NULL, period TEXT DEFAULT '7d',
+      confidence REAL DEFAULT 0.5, recommendation TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_collab_requests (
+      id TEXT PRIMARY KEY, brand_name TEXT NOT NULL, contact_name TEXT,
+      contact_email TEXT, platform TEXT DEFAULT 'all',
+      direction TEXT DEFAULT 'inbound', status TEXT DEFAULT 'pending',
+      type TEXT DEFAULT 'content', description TEXT,
+      terms TEXT, deliverables TEXT DEFAULT '[]',
+      budget REAL DEFAULT 0, deadline TEXT,
+      notes TEXT, agent_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS br_social_proof (
+      id TEXT PRIMARY KEY, type TEXT DEFAULT 'testimonial',
+      author_name TEXT, author_handle TEXT, author_title TEXT,
+      content TEXT NOT NULL, rating INT DEFAULT 5,
+      platform TEXT, source_url TEXT,
+      metric_label TEXT, metric_value TEXT,
+      badge_style TEXT DEFAULT 'default',
+      featured INT DEFAULT 0, approved INT DEFAULT 1,
+      embed_code TEXT, campaign_id TEXT,
+      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
+    )`),
+  ]);
 }
 
 async function log(db, type, id, desc, agent) {
@@ -294,8 +387,6 @@ const BUILTIN_TEMPLATES = [
   { id: 'poll-post', name: 'Engagement Poll', platform: 'x', type: 'poll', description: 'Poll post designed to maximize engagement', structure: JSON.stringify({ parts: ['question (debatable topic, clear options)', 'option_1', 'option_2', 'option_3 (optional)', 'option_4 (optional)', 'context (why you are asking, reply thread)'], tips: 'Controversial but not offensive. 2-4 options. Quote tweet with your own answer.' }) },
 ];
 
-let dbReady = false;
-
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
@@ -303,13 +394,14 @@ export default {
     const path = url.pathname;
     const method = request.method;
     if (path === "/" || path === "") return new Response(ROOT_HTML, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
-    if (!dbReady) { await ensureTables(env.DB); await ensureNewTables(env.DB); dbReady = true; }
+    await ensureTables(env.DB);
+    await ensureNewTables(env.DB);
 
     // ── Health ──
 
     if (path === '/robots.txt') return new Response(``, {headers:{'Content-Type':'text/plain'}});
     if (path === '/sitemap.xml') return new Response('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://blackroad.io/</loc></url></urlset>', {headers:{'Content-Type':'application/xml'}});
-    if (path === '/health' || path === '/api/health') return json({ status: 'ok', service: 'backroad', agents: Object.keys(SOCIAL_AGENTS).length, platforms: PLATFORMS.length, features: ['calendar','analytics','hashtags','templates','ab-test','personas','voice','shorten','influencers','repurpose','sentiment','competitors','inbox','score','viral','roi'], ts: new Date().toISOString() });
+    if (path === '/health' || path === '/api/health') return json({ status: 'ok', service: 'backroad', agents: Object.keys(SOCIAL_AGENTS).length, platforms: PLATFORMS.length, features: ['calendar','analytics','hashtags','templates','ab-test','personas','voice','shorten','influencers','repurpose','sentiment','competitors','inbox','score','viral','roi','story','memes','listening','ugc','auto-engage','insights','collab-requests','social-proof'], ts: new Date().toISOString() });
 
     // ── Stats ──
     if (path === '/api/stats') {
@@ -1969,6 +2061,774 @@ export default {
       return json({ ok: true, deleted: roiMatch[1] });
     }
 
+    // ═══════════════════════════════════════════════════════
+    // 17. STORY GENERATOR
+    // ═══════════════════════════════════════════════════════
+
+    // ── Generate a brand story ──
+    if (path === '/api/story' && method === 'POST') {
+      const body = await request.json();
+      const theme = body.theme || 'brand origin';
+      const genre = body.genre || 'origin';
+      const mood = body.mood || 'inspiring';
+      const characters = body.characters || ['thalia', 'roadie', 'calliope'];
+      const wordTarget = Math.min(body.word_count || 500, 2000);
+
+      // Resolve agent characters
+      const cast = characters.map(c => {
+        const agent = SOCIAL_AGENTS[c];
+        return agent ? { id: c, name: agent.name, role: agent.role, style: agent.style } : { id: c, name: c, role: 'guest', style: 'natural' };
+      });
+
+      const agentId = body.agent || 'calliope';
+      const agent = SOCIAL_AGENTS[agentId] || SOCIAL_AGENTS.calliope;
+      let narrative = '';
+      let title = body.title || '';
+
+      try {
+        const aiR = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+          messages: [
+            { role: 'system', content: `You are ${agent.name}, a master storyteller for BlackRoad OS. Style: ${agent.style}. Write a ${mood} ${genre} story about the theme "${theme}". The story features these characters: ${cast.map(c => `${c.name} (${c.role})`).join(', ')}. The story should have a clear narrative arc: setup, rising action, climax, resolution. Target approximately ${wordTarget} words. Make it feel authentic and grounded. Return ONLY the story text, no meta commentary.` },
+            { role: 'user', content: body.prompt || `Write a ${genre} story about: ${theme}` },
+          ], max_tokens: Math.min(wordTarget * 2, 2048),
+        });
+        if (aiR.response) narrative = aiR.response.trim();
+      } catch { narrative = `The road stretched out before them, ${cast.map(c=>c.name).join(' and ')} standing at the beginning of something new. This was BlackRoad, and every journey here mattered.`; }
+
+      if (!title) {
+        try {
+          const aiT = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+            messages: [
+              { role: 'system', content: 'Generate a compelling story title. Return ONLY the title, nothing else. No quotes.' },
+              { role: 'user', content: narrative.slice(0, 500) },
+            ], max_tokens: 30,
+          });
+          if (aiT.response) title = aiT.response.trim().replace(/^["']|["']$/g, '');
+        } catch { title = `The ${theme.split(' ')[0]} Road`; }
+      }
+
+      const id = crypto.randomUUID();
+      const wordCount = narrative.split(/\s+/).length;
+      await env.DB.prepare('INSERT INTO br_stories (id,title,theme,narrative,characters,genre,mood,word_count,agent_id,agent_name,tags,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(id, title, theme, narrative, JSON.stringify(cast), genre, mood, wordCount, agentId, agent.name, JSON.stringify(body.tags||[]), 'published').run();
+      await log(env.DB, 'story_generated', id, `Story: "${title}" by ${agent.name} (${wordCount} words)`, agent.name);
+      stampChain('story_generated', id, title).catch(()=>{});
+      earnCoin('creator', 'story', 1.0).catch(()=>{});
+
+      return json({ id, title, theme, genre, mood, narrative, characters: cast, word_count: wordCount, agent: agent.name, sentiment: quickSentiment(narrative) }, 201);
+    }
+
+    // ── List stories ──
+    if (path === '/api/story' && method === 'GET') {
+      const genre = url.searchParams.get('genre');
+      const agent = url.searchParams.get('agent');
+      let q = 'SELECT id, title, theme, genre, mood, word_count, agent_name, tags, status, created_at FROM br_stories';
+      const p = []; const w = [];
+      if (genre) { w.push('genre=?'); p.push(genre); }
+      if (agent) { w.push('agent_id=?'); p.push(agent); }
+      if (w.length) q += ' WHERE ' + w.join(' AND ');
+      q += ' ORDER BY created_at DESC LIMIT 50';
+      const stories = p.length ? (await env.DB.prepare(q).bind(...p).all()).results : (await env.DB.prepare(q).all()).results;
+      return json({ stories, total: stories.length });
+    }
+
+    // ── Get single story ──
+    const storyMatch = path.match(/^\/api\/story\/([^/]+)$/);
+    if (storyMatch && method === 'GET') {
+      const story = await env.DB.prepare('SELECT * FROM br_stories WHERE id=?').bind(storyMatch[1]).first();
+      if (!story) return json({ error: 'Not found' }, 404);
+      return json({ story: { ...story, characters: JSON.parse(story.characters || '[]'), tags: JSON.parse(story.tags || '[]') } });
+    }
+
+    // ── Delete story ──
+    if (storyMatch && method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM br_stories WHERE id=?').bind(storyMatch[1]).run();
+      return json({ ok: true, deleted: storyMatch[1] });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 18. MEME GENERATOR
+    // ═══════════════════════════════════════════════════════
+
+    const MEME_TEMPLATES = [
+      { id: 'drake', name: 'Drake Hotline', format: 'top_bottom', description: 'Drake disapproves top, approves bottom' },
+      { id: 'distracted', name: 'Distracted Boyfriend', format: 'three_panel', description: 'Looking away from one thing to another' },
+      { id: 'change-my-mind', name: 'Change My Mind', format: 'single_caption', description: 'Person sitting at table with sign' },
+      { id: 'expanding-brain', name: 'Expanding Brain', format: 'multi_tier', description: '4 tiers of increasing enlightenment' },
+      { id: 'this-is-fine', name: 'This Is Fine', format: 'single_caption', description: 'Dog in burning room' },
+      { id: 'two-buttons', name: 'Two Buttons', format: 'two_choices', description: 'Sweating over two button choices' },
+      { id: 'stonks', name: 'Stonks', format: 'single_caption', description: 'Meme man with stonks arrow' },
+      { id: 'galaxy-brain', name: 'Galaxy Brain', format: 'multi_tier', description: 'Universe brain escalation' },
+      { id: 'always-has-been', name: 'Always Has Been', format: 'two_panel', description: 'Wait, it\'s all X? Always has been.' },
+      { id: 'road-diverged', name: 'Road Diverged (BlackRoad)', format: 'two_choices', description: 'Two paths, one is the BlackRoad' },
+    ];
+
+    // ── Generate meme ──
+    if (path === '/api/memes' && method === 'POST') {
+      const body = await request.json();
+      const topic = body.topic || body.content || '';
+      if (!topic) return json({ error: 'topic or content required' }, 400);
+      const templateId = body.template || null;
+      const platform = body.platform || 'x';
+
+      const agentId = body.agent || 'thalia';
+      const agent = SOCIAL_AGENTS[agentId] || SOCIAL_AGENTS.thalia;
+
+      // Pick template if not specified
+      let template = templateId ? MEME_TEMPLATES.find(t => t.id === templateId) : null;
+      if (!template) template = MEME_TEMPLATES[Math.floor(Math.random() * MEME_TEMPLATES.length)];
+
+      let memeContent = {};
+      try {
+        const formatInstructions = {
+          top_bottom: 'Return JSON: {"top_text": "...", "bottom_text": "..."}',
+          three_panel: 'Return JSON: {"panel_1": "...", "panel_2": "...", "panel_3": "..."}',
+          single_caption: 'Return JSON: {"caption": "..."}',
+          multi_tier: 'Return JSON: {"tier_1": "...", "tier_2": "...", "tier_3": "...", "tier_4": "..."}',
+          two_choices: 'Return JSON: {"choice_a": "...", "choice_b": "..."}',
+          two_panel: 'Return JSON: {"panel_1": "...", "panel_2": "..."}',
+        };
+        const aiR = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+          messages: [
+            { role: 'system', content: `You are ${agent.name}, a meme creator for BlackRoad OS. Style: ${agent.style}. Create a funny meme using the "${template.name}" template (${template.description}). ${formatInstructions[template.format] || formatInstructions.top_bottom}. Also add a "caption" field for the post caption on ${platform}. Keep text short and punchy. No explanation, ONLY JSON.` },
+            { role: 'user', content: `Topic: ${topic}` },
+          ], max_tokens: 256,
+        });
+        if (aiR.response) {
+          const match = aiR.response.match(/\{[\s\S]*\}/);
+          if (match) memeContent = JSON.parse(match[0]);
+        }
+      } catch {}
+
+      if (Object.keys(memeContent).length === 0) {
+        memeContent = { top_text: topic.slice(0, 50), bottom_text: 'BlackRoad OS knows the way', caption: topic };
+      }
+
+      const id = crypto.randomUUID();
+      const brandSafe = !(topic.toLowerCase().match(/nsfw|explicit|offensive|hate/));
+      await env.DB.prepare('INSERT INTO br_memes (id,template,top_text,bottom_text,caption,style,platform,agent_id,agent_name,tags,brand_safe) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(id, template.id, memeContent.top_text||memeContent.panel_1||memeContent.tier_1||'', memeContent.bottom_text||memeContent.panel_2||memeContent.tier_4||'', memeContent.caption||topic, body.style||'classic', platform, agentId, agent.name, JSON.stringify(body.tags||[]), brandSafe?1:0).run();
+      await log(env.DB, 'meme_generated', id, `Meme: ${template.name} by ${agent.name}`, agent.name);
+
+      return json({ id, template: template, content: memeContent, platform, agent: agent.name, brand_safe: brandSafe, sentiment: quickSentiment(memeContent.caption || topic) }, 201);
+    }
+
+    // ── List memes ──
+    if (path === '/api/memes' && method === 'GET') {
+      const memes = (await env.DB.prepare('SELECT * FROM br_memes ORDER BY created_at DESC LIMIT 50').all()).results;
+      return json({ memes, templates: MEME_TEMPLATES, total: memes.length });
+    }
+
+    // ── Get meme templates ──
+    if (path === '/api/memes/templates' && method === 'GET') {
+      return json({ templates: MEME_TEMPLATES });
+    }
+
+    // ── Delete meme ──
+    const memeMatch = path.match(/^\/api\/memes\/([^/]+)$/);
+    if (memeMatch && method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM br_memes WHERE id=?').bind(memeMatch[1]).run();
+      return json({ ok: true, deleted: memeMatch[1] });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 19. SOCIAL LISTENING
+    // ═══════════════════════════════════════════════════════
+
+    // ── Add keyword to monitor ──
+    if (path === '/api/listening' && method === 'POST') {
+      const body = await request.json();
+      if (!body.keyword) return json({ error: 'keyword required' }, 400);
+      const id = crypto.randomUUID();
+      await env.DB.prepare('INSERT INTO br_listening (id,keyword,platform,match_type,alert_enabled,alert_threshold,status) VALUES (?,?,?,?,?,?,?)')
+        .bind(id, body.keyword, body.platform||'all', body.match_type||'contains', body.alert_enabled!==false?1:0, body.alert_threshold||5, 'active').run();
+      await log(env.DB, 'listening_added', id, `Monitoring keyword: "${body.keyword}" on ${body.platform||'all'}`, null);
+      return json({ id, keyword: body.keyword, platform: body.platform||'all', status: 'active' }, 201);
+    }
+
+    // ── List monitored keywords ──
+    if (path === '/api/listening' && method === 'GET') {
+      const status = url.searchParams.get('status') || 'active';
+      const keywords = (await env.DB.prepare('SELECT * FROM br_listening WHERE status=? ORDER BY mentions_count DESC, created_at DESC LIMIT 100').bind(status).all()).results;
+
+      // Get recent mentions across all keywords
+      const recentMentions = (await env.DB.prepare('SELECT * FROM br_listening_mentions ORDER BY created_at DESC LIMIT 50').all()).results;
+
+      // Summary stats
+      const totalMentions = keywords.reduce((s, k) => s + k.mentions_count, 0);
+      const avgSentiment = keywords.length ? keywords.reduce((s, k) => s + k.sentiment_avg, 0) / keywords.length : 0;
+
+      return json({ keywords, recent_mentions: recentMentions, total_keywords: keywords.length, total_mentions: totalMentions, avg_sentiment: Math.round(avgSentiment * 100) / 100 });
+    }
+
+    // ── Report a mention (webhook for ingesting mentions) ──
+    if (path === '/api/listening/mention' && method === 'POST') {
+      const body = await request.json();
+      if (!body.keyword_id || !body.content) return json({ error: 'keyword_id and content required' }, 400);
+
+      const keyword = await env.DB.prepare('SELECT * FROM br_listening WHERE id=?').bind(body.keyword_id).first();
+      if (!keyword) return json({ error: 'Keyword not found' }, 404);
+
+      const sentiment = quickSentiment(body.content);
+      const id = crypto.randomUUID();
+      await env.DB.prepare('INSERT INTO br_listening_mentions (id,keyword_id,platform,source_handle,source_name,content,url,sentiment_score,sentiment_label) VALUES (?,?,?,?,?,?,?,?,?)')
+        .bind(id, body.keyword_id, body.platform||keyword.platform, body.source_handle||'', body.source_name||'', body.content, body.url||'', sentiment.score, sentiment.label).run();
+
+      // Update keyword stats
+      const newCount = keyword.mentions_count + 1;
+      const newSentimentAvg = ((keyword.sentiment_avg * keyword.mentions_count) + sentiment.score) / newCount;
+      await env.DB.prepare("UPDATE br_listening SET mentions_count=?, sentiment_avg=?, last_mention=datetime('now'), updated_at=datetime('now') WHERE id=?")
+        .bind(newCount, newSentimentAvg, body.keyword_id).run();
+
+      // Check if alert threshold reached
+      let alertTriggered = false;
+      if (keyword.alert_enabled && newCount % keyword.alert_threshold === 0) {
+        alertTriggered = true;
+        await log(env.DB, 'listening_alert', body.keyword_id, `Alert: "${keyword.keyword}" hit ${newCount} mentions (sentiment: ${sentiment.label})`, null);
+      }
+
+      return json({ id, keyword: keyword.keyword, sentiment, mention_count: newCount, alert_triggered: alertTriggered }, 201);
+    }
+
+    // ── Scan content against all keywords (batch check) ──
+    if (path === '/api/listening/scan' && method === 'POST') {
+      const body = await request.json();
+      if (!body.content) return json({ error: 'content required' }, 400);
+      const content = body.content.toLowerCase();
+
+      const keywords = (await env.DB.prepare("SELECT * FROM br_listening WHERE status='active'").all()).results;
+      const matches = [];
+
+      for (const kw of keywords) {
+        const keyword = kw.keyword.toLowerCase();
+        let matched = false;
+        if (kw.match_type === 'exact') matched = content === keyword;
+        else if (kw.match_type === 'startswith') matched = content.startsWith(keyword);
+        else matched = content.includes(keyword);
+
+        if (matched) {
+          matches.push({ keyword_id: kw.id, keyword: kw.keyword, platform: kw.platform, mentions: kw.mentions_count });
+        }
+      }
+
+      return json({ content_preview: body.content.slice(0, 200), matches, total_matches: matches.length, keywords_checked: keywords.length });
+    }
+
+    // ── Update keyword settings ──
+    const listeningMatch = path.match(/^\/api\/listening\/([^/]+)$/);
+    if (listeningMatch && method === 'PUT') {
+      const body = await request.json();
+      const sets = []; const vals = [];
+      for (const field of ['keyword','platform','match_type','status']) {
+        if (body[field] !== undefined) { sets.push(`${field}=?`); vals.push(body[field]); }
+      }
+      if (body.alert_enabled !== undefined) { sets.push('alert_enabled=?'); vals.push(body.alert_enabled?1:0); }
+      if (body.alert_threshold !== undefined) { sets.push('alert_threshold=?'); vals.push(body.alert_threshold); }
+      if (sets.length === 0) return json({ error: 'nothing to update' }, 400);
+      sets.push("updated_at=datetime('now')");
+      vals.push(listeningMatch[1]);
+      await env.DB.prepare(`UPDATE br_listening SET ${sets.join(',')} WHERE id=?`).bind(...vals).run();
+      return json({ ok: true, id: listeningMatch[1] });
+    }
+
+    // ── Delete keyword ──
+    if (listeningMatch && method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM br_listening WHERE id=?').bind(listeningMatch[1]).run();
+      await env.DB.prepare('DELETE FROM br_listening_mentions WHERE keyword_id=?').bind(listeningMatch[1]).run();
+      return json({ ok: true, deleted: listeningMatch[1] });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 20. UGC MANAGER
+    // ═══════════════════════════════════════════════════════
+
+    // ── Submit UGC ──
+    if (path === '/api/ugc' && method === 'POST') {
+      const body = await request.json();
+      if (!body.content) return json({ error: 'content required' }, 400);
+      const id = crypto.randomUUID();
+      await env.DB.prepare('INSERT INTO br_ugc (id,content,content_type,source_platform,source_handle,source_name,source_url,rights_status,rights_notes,tags,campaign_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(id, body.content, body.content_type||'text', body.source_platform||'', body.source_handle||'', body.source_name||'', body.source_url||'', body.rights_status||'pending', body.rights_notes||'', JSON.stringify(body.tags||[]), body.campaign_id||null).run();
+      await log(env.DB, 'ugc_submitted', id, `UGC from ${body.source_handle||'unknown'} on ${body.source_platform||'unknown'}`, null);
+      return json({ id, content_type: body.content_type||'text', rights_status: 'pending', sentiment: quickSentiment(body.content) }, 201);
+    }
+
+    // ── List UGC ──
+    if (path === '/api/ugc' && method === 'GET') {
+      const rights = url.searchParams.get('rights');
+      const featured = url.searchParams.get('featured');
+      const approved = url.searchParams.get('approved');
+      let q = 'SELECT * FROM br_ugc'; const p = []; const w = [];
+      if (rights) { w.push('rights_status=?'); p.push(rights); }
+      if (featured === 'true') { w.push('featured=1'); }
+      if (approved === 'true') { w.push('approved=1'); }
+      if (w.length) q += ' WHERE ' + w.join(' AND ');
+      q += ' ORDER BY created_at DESC LIMIT 100';
+      const items = p.length ? (await env.DB.prepare(q).bind(...p).all()).results : (await env.DB.prepare(q).all()).results;
+
+      const stats = await env.DB.prepare("SELECT COUNT(*) as total, SUM(CASE WHEN rights_status='granted' THEN 1 ELSE 0 END) as rights_granted, SUM(CASE WHEN approved=1 THEN 1 ELSE 0 END) as approved_count, SUM(CASE WHEN featured=1 THEN 1 ELSE 0 END) as featured_count FROM br_ugc").first();
+
+      return json({ items: items.map(i => ({...i, tags: JSON.parse(i.tags||'[]')})), total: items.length, stats });
+    }
+
+    // ── Approve / feature / grant rights on UGC ──
+    const ugcActionMatch = path.match(/^\/api\/ugc\/([^/]+)\/(approve|feature|grant-rights|reject)$/);
+    if (ugcActionMatch && method === 'POST') {
+      const [, itemId, action] = ugcActionMatch;
+      const body = await request.json().catch(() => ({}));
+      switch (action) {
+        case 'approve':
+          await env.DB.prepare("UPDATE br_ugc SET approved=1, updated_at=datetime('now') WHERE id=?").bind(itemId).run();
+          break;
+        case 'feature':
+          await env.DB.prepare("UPDATE br_ugc SET featured=1, approved=1, updated_at=datetime('now') WHERE id=?").bind(itemId).run();
+          break;
+        case 'grant-rights':
+          await env.DB.prepare("UPDATE br_ugc SET rights_status='granted', rights_granted_at=datetime('now'), rights_notes=?, updated_at=datetime('now') WHERE id=?").bind(body.notes||'Rights granted', itemId).run();
+          break;
+        case 'reject':
+          await env.DB.prepare("UPDATE br_ugc SET approved=0, rights_status='denied', rights_notes=?, updated_at=datetime('now') WHERE id=?").bind(body.reason||'Rejected', itemId).run();
+          break;
+      }
+      await log(env.DB, 'ugc_action', itemId, `UGC ${action}: ${itemId}`, null);
+      return json({ ok: true, id: itemId, action });
+    }
+
+    // ── Get single UGC item ──
+    const ugcMatch = path.match(/^\/api\/ugc\/([^/]+)$/);
+    if (ugcMatch && method === 'GET') {
+      const item = await env.DB.prepare('SELECT * FROM br_ugc WHERE id=?').bind(ugcMatch[1]).first();
+      if (!item) return json({ error: 'Not found' }, 404);
+      return json({ item: { ...item, tags: JSON.parse(item.tags||'[]') } });
+    }
+
+    // ── Delete UGC ──
+    if (ugcMatch && method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM br_ugc WHERE id=?').bind(ugcMatch[1]).run();
+      return json({ ok: true, deleted: ugcMatch[1] });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 21. ENGAGEMENT AUTOMATION
+    // ═══════════════════════════════════════════════════════
+
+    // ── Create auto-engage rule ──
+    if (path === '/api/auto-engage' && method === 'POST') {
+      const body = await request.json();
+      if (!body.name) return json({ error: 'name required' }, 400);
+      const id = crypto.randomUUID();
+      const agentId = body.agent_id || 'aria';
+      const agent = SOCIAL_AGENTS[agentId] || SOCIAL_AGENTS.aria;
+
+      // If no response template, generate one with AI
+      let responseTemplate = body.response_template || '';
+      if (!responseTemplate && body.trigger_keywords && body.trigger_keywords.length > 0) {
+        try {
+          const aiR = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+            messages: [
+              { role: 'system', content: `You are ${agent.name}. Style: ${agent.style}. Create a warm, on-brand reply template for when someone mentions these keywords: ${body.trigger_keywords.join(', ')}. Use {{keyword}} as a placeholder for the matched keyword. Return ONLY the reply template text, 1-2 sentences.` },
+              { role: 'user', content: `Create a reply template for: ${body.trigger_keywords.join(', ')}` },
+            ], max_tokens: 100,
+          });
+          if (aiR.response) responseTemplate = aiR.response.trim();
+        } catch { responseTemplate = 'Thanks for mentioning {{keyword}}. We appreciate you being part of the journey.'; }
+      }
+
+      await env.DB.prepare('INSERT INTO br_auto_engage (id,name,type,trigger_keywords,trigger_sentiment,platform,action,response_template,agent_id,max_per_hour,active) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(id, body.name, body.type||'auto-reply', JSON.stringify(body.trigger_keywords||[]), body.trigger_sentiment||null, body.platform||'all', body.action||'reply', responseTemplate, agentId, body.max_per_hour||10, 1).run();
+      await log(env.DB, 'auto_engage_created', id, `Auto-engage rule: ${body.name} (${body.type||'auto-reply'})`, agent.name);
+      return json({ id, name: body.name, type: body.type||'auto-reply', agent: agent.name, response_template: responseTemplate, active: true }, 201);
+    }
+
+    // ── List auto-engage rules ──
+    if (path === '/api/auto-engage' && method === 'GET') {
+      const rules = (await env.DB.prepare('SELECT * FROM br_auto_engage ORDER BY active DESC, executions DESC, created_at DESC LIMIT 100').all()).results;
+      const recentLogs = (await env.DB.prepare('SELECT * FROM br_auto_engage_log ORDER BY created_at DESC LIMIT 50').all()).results;
+
+      const totalExecutions = rules.reduce((s, r) => s + r.executions, 0);
+      const activeRules = rules.filter(r => r.active);
+
+      return json({
+        rules: rules.map(r => ({...r, trigger_keywords: JSON.parse(r.trigger_keywords||'[]')})),
+        recent_activity: recentLogs,
+        total_rules: rules.length,
+        active_rules: activeRules.length,
+        total_executions: totalExecutions,
+      });
+    }
+
+    // ── Trigger auto-engage (process incoming content against rules) ──
+    if (path === '/api/auto-engage/trigger' && method === 'POST') {
+      const body = await request.json();
+      if (!body.content) return json({ error: 'content required' }, 400);
+      const content = body.content.toLowerCase();
+      const sentiment = quickSentiment(body.content);
+      const platform = body.platform || 'all';
+
+      const rules = (await env.DB.prepare("SELECT * FROM br_auto_engage WHERE active=1").all()).results;
+      const triggered = [];
+
+      for (const rule of rules) {
+        if (rule.platform !== 'all' && rule.platform !== platform) continue;
+
+        // Check sentiment trigger
+        if (rule.trigger_sentiment) {
+          if (rule.trigger_sentiment === 'positive' && sentiment.score < 0.2) continue;
+          if (rule.trigger_sentiment === 'negative' && sentiment.score > -0.2) continue;
+          if (rule.trigger_sentiment === 'neutral' && Math.abs(sentiment.score) > 0.2) continue;
+        }
+
+        // Check keyword triggers
+        const keywords = JSON.parse(rule.trigger_keywords || '[]');
+        let matched = keywords.length === 0; // if no keywords, match on sentiment alone
+        let matchedKeyword = '';
+        for (const kw of keywords) {
+          if (content.includes(kw.toLowerCase())) {
+            matched = true;
+            matchedKeyword = kw;
+            break;
+          }
+        }
+        if (!matched) continue;
+
+        // Generate response
+        const agent = SOCIAL_AGENTS[rule.agent_id] || SOCIAL_AGENTS.aria;
+        let response = rule.response_template ? rule.response_template.replace(/\{\{keyword\}\}/g, matchedKeyword) : '';
+
+        if (!response || body.generate_fresh) {
+          try {
+            const aiR = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+              messages: [
+                { role: 'system', content: `You are ${agent.name}. Style: ${agent.style}. Write a brief, warm reply to this ${platform} comment. 1-2 sentences. Stay on-brand for BlackRoad OS.` },
+                { role: 'user', content: body.content },
+              ], max_tokens: 100,
+            });
+            if (aiR.response) response = aiR.response.trim();
+          } catch { response = rule.response_template || 'Thanks for being part of the journey.'; }
+        }
+
+        // Log execution
+        const logId = crypto.randomUUID();
+        await env.DB.prepare('INSERT INTO br_auto_engage_log (id,rule_id,trigger_content,response_content,platform,target_handle,agent_name,sentiment_score) VALUES (?,?,?,?,?,?,?,?)')
+          .bind(logId, rule.id, body.content.slice(0, 500), response, platform, body.from_handle||'', agent.name, sentiment.score).run();
+        await env.DB.prepare('UPDATE br_auto_engage SET executions=executions+1, updated_at=datetime(\'now\') WHERE id=?').bind(rule.id).run();
+
+        triggered.push({ rule_id: rule.id, rule_name: rule.name, agent: agent.name, response, matched_keyword: matchedKeyword, action: rule.action });
+      }
+
+      return json({ content_preview: body.content.slice(0, 200), sentiment, triggered, rules_checked: rules.length, rules_fired: triggered.length });
+    }
+
+    // ── Toggle auto-engage rule ──
+    const autoEngageMatch = path.match(/^\/api\/auto-engage\/([^/]+)\/(activate|deactivate)$/);
+    if (autoEngageMatch && method === 'POST') {
+      const [, ruleId, action] = autoEngageMatch;
+      await env.DB.prepare("UPDATE br_auto_engage SET active=?, updated_at=datetime('now') WHERE id=?").bind(action === 'activate' ? 1 : 0, ruleId).run();
+      return json({ ok: true, id: ruleId, active: action === 'activate' });
+    }
+
+    // ── Delete auto-engage rule ──
+    const autoEngageDelMatch = path.match(/^\/api\/auto-engage\/([^/]+)$/);
+    if (autoEngageDelMatch && method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM br_auto_engage WHERE id=?').bind(autoEngageDelMatch[1]).run();
+      await env.DB.prepare('DELETE FROM br_auto_engage_log WHERE rule_id=?').bind(autoEngageDelMatch[1]).run();
+      return json({ ok: true, deleted: autoEngageDelMatch[1] });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 22. PLATFORM INSIGHTS
+    // ═══════════════════════════════════════════════════════
+
+    // ── Get insights for a platform ──
+    if (path === '/api/insights' && method === 'GET') {
+      const platform = url.searchParams.get('platform') || 'all';
+      const period = url.searchParams.get('period') || '30d';
+      const daysMap = { '7d': 7, '30d': 30, '90d': 90 };
+      const days = daysMap[period] || 30;
+
+      // Gather data from posts for the platform
+      let postFilter = `created_at >= datetime('now', '-${days} days')`;
+      const params = [];
+      if (platform !== 'all') {
+        postFilter += ` AND platforms LIKE ?`;
+        params.push(`%${platform}%`);
+      }
+
+      const postData = params.length
+        ? (await env.DB.prepare(`SELECT * FROM br_posts WHERE ${postFilter} ORDER BY created_at DESC LIMIT 500`).bind(...params).all()).results
+        : (await env.DB.prepare(`SELECT * FROM br_posts WHERE ${postFilter} ORDER BY created_at DESC LIMIT 500`).all()).results;
+
+      // Best posting hours
+      const hourBuckets = {};
+      for (const p of postData) {
+        const hour = new Date(p.created_at).getHours();
+        if (!hourBuckets[hour]) hourBuckets[hour] = { posts: 0, total_engagement: 0, total_reach: 0 };
+        hourBuckets[hour].posts++;
+        hourBuckets[hour].total_engagement += (p.engagement_likes||0) + (p.engagement_shares||0) + (p.engagement_comments||0);
+        hourBuckets[hour].total_reach += p.engagement_reach || 0;
+      }
+      const bestHours = Object.entries(hourBuckets)
+        .map(([h, d]) => ({ hour: parseInt(h), ...d, avg_engagement: d.posts ? Math.round(d.total_engagement / d.posts) : 0 }))
+        .sort((a, b) => b.avg_engagement - a.avg_engagement)
+        .slice(0, 5);
+
+      // Best day of week
+      const dayBuckets = {};
+      const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      for (const p of postData) {
+        const dayIdx = new Date(p.created_at).getDay();
+        const day = dayNames[dayIdx];
+        if (!dayBuckets[day]) dayBuckets[day] = { posts: 0, total_engagement: 0 };
+        dayBuckets[day].posts++;
+        dayBuckets[day].total_engagement += (p.engagement_likes||0) + (p.engagement_shares||0) + (p.engagement_comments||0);
+      }
+      const bestDays = Object.entries(dayBuckets)
+        .map(([d, data]) => ({ day: d, ...data, avg_engagement: data.posts ? Math.round(data.total_engagement / data.posts) : 0 }))
+        .sort((a, b) => b.avg_engagement - a.avg_engagement);
+
+      // Content type analysis (based on agent who handled it)
+      const agentPerformance = {};
+      for (const p of postData) {
+        const agent = p.agent_name || 'unknown';
+        if (!agentPerformance[agent]) agentPerformance[agent] = { posts: 0, total_engagement: 0, total_reach: 0 };
+        agentPerformance[agent].posts++;
+        agentPerformance[agent].total_engagement += (p.engagement_likes||0) + (p.engagement_shares||0) + (p.engagement_comments||0);
+        agentPerformance[agent].total_reach += p.engagement_reach || 0;
+      }
+
+      // Posting frequency
+      const totalPosts = postData.length;
+      const postsPerDay = totalPosts / Math.max(days, 1);
+      let frequencyAdvice = 'Post more frequently to build momentum.';
+      if (postsPerDay >= 3) frequencyAdvice = 'High frequency. Consider focusing on quality over quantity.';
+      else if (postsPerDay >= 1) frequencyAdvice = 'Good posting frequency. Stay consistent.';
+      else if (postsPerDay >= 0.5) frequencyAdvice = 'Moderate frequency. Try to post daily for best results.';
+
+      // AI-generated recommendations
+      let recommendations = [];
+      try {
+        const aiR = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+          messages: [
+            { role: 'system', content: `You are a social media strategist analyzing ${platform} performance. Given the data, provide 3-5 specific, actionable recommendations. Return ONLY a JSON array of strings. No explanation.` },
+            { role: 'user', content: `Platform: ${platform}. Period: ${days} days. Posts: ${totalPosts}. Posts/day: ${postsPerDay.toFixed(1)}. Best hours: ${bestHours.slice(0,3).map(h=>h.hour+'h').join(',')}. Best days: ${bestDays.slice(0,2).map(d=>d.day).join(',')}. Top agents: ${Object.entries(agentPerformance).slice(0,3).map(([a,d])=>`${a}(${d.posts})`).join(',')}.` },
+          ], max_tokens: 256,
+        });
+        if (aiR.response) {
+          const match = aiR.response.match(/\[[\s\S]*\]/);
+          if (match) recommendations = JSON.parse(match[0]);
+        }
+      } catch {}
+      if (recommendations.length === 0) {
+        recommendations = [frequencyAdvice, 'Experiment with different content formats.', 'Engage with your audience through replies and polls.'];
+      }
+
+      // Save insights
+      const insightId = crypto.randomUUID();
+      try {
+        await env.DB.prepare('INSERT INTO br_insights (id,platform,metric_type,metric_value,period,confidence,recommendation) VALUES (?,?,?,?,?,?,?)')
+          .bind(insightId, platform, 'deep_analysis', JSON.stringify({ best_hours: bestHours, best_days: bestDays, frequency: postsPerDay }), period, 0.7, recommendations.join('; ')).run();
+      } catch {}
+
+      return json({
+        platform, period, days,
+        overview: { total_posts: totalPosts, posts_per_day: Math.round(postsPerDay * 10) / 10, frequency_advice: frequencyAdvice },
+        best_posting_times: bestHours,
+        best_days: bestDays,
+        agent_performance: agentPerformance,
+        recommendations,
+      });
+    }
+
+    // ── Get stored insights history ──
+    if (path === '/api/insights/history' && method === 'GET') {
+      const platform = url.searchParams.get('platform');
+      let q = 'SELECT * FROM br_insights';
+      const p = [];
+      if (platform) { q += ' WHERE platform=?'; p.push(platform); }
+      q += ' ORDER BY created_at DESC LIMIT 50';
+      const insights = p.length ? (await env.DB.prepare(q).bind(...p).all()).results : (await env.DB.prepare(q).all()).results;
+      return json({ insights: insights.map(i => ({...i, metric_value: JSON.parse(i.metric_value||'{}')})), total: insights.length });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 23. COLLABORATION REQUESTS
+    // ═══════════════════════════════════════════════════════
+
+    // ── Create collab request ──
+    if (path === '/api/collab-requests' && method === 'POST') {
+      const body = await request.json();
+      if (!body.brand_name) return json({ error: 'brand_name required' }, 400);
+      const id = crypto.randomUUID();
+      await env.DB.prepare('INSERT INTO br_collab_requests (id,brand_name,contact_name,contact_email,platform,direction,status,type,description,terms,deliverables,budget,deadline,notes,agent_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(id, body.brand_name, body.contact_name||'', body.contact_email||'', body.platform||'all', body.direction||'inbound', 'pending', body.type||'content', body.description||'', body.terms||'', JSON.stringify(body.deliverables||[]), body.budget||0, body.deadline||null, body.notes||'', body.agent_id||'sebastian').run();
+      await log(env.DB, 'collab_request', id, `Collab request ${body.direction||'inbound'}: ${body.brand_name} (${body.type||'content'})`, null);
+
+      // AI draft response for inbound requests
+      let suggestedResponse = '';
+      if ((body.direction || 'inbound') === 'inbound') {
+        const agent = SOCIAL_AGENTS.sebastian || SOCIAL_AGENTS.thalia;
+        try {
+          const aiR = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+            messages: [
+              { role: 'system', content: `You are ${agent.name} from BlackRoad OS. Style: ${agent.style}. Draft a professional, warm response to an inbound brand collaboration request. 2-3 sentences. Express interest and suggest next steps.` },
+              { role: 'user', content: `Brand: ${body.brand_name}. Type: ${body.type||'content'}. Description: ${body.description||'Brand collaboration opportunity'}.` },
+            ], max_tokens: 150,
+          });
+          if (aiR.response) suggestedResponse = aiR.response.trim();
+        } catch {}
+      }
+
+      return json({ id, brand_name: body.brand_name, direction: body.direction||'inbound', status: 'pending', type: body.type||'content', suggested_response: suggestedResponse }, 201);
+    }
+
+    // ── List collab requests ──
+    if (path === '/api/collab-requests' && method === 'GET') {
+      const direction = url.searchParams.get('direction');
+      const status = url.searchParams.get('status');
+      let q = 'SELECT * FROM br_collab_requests'; const p = []; const w = [];
+      if (direction) { w.push('direction=?'); p.push(direction); }
+      if (status) { w.push('status=?'); p.push(status); }
+      if (w.length) q += ' WHERE ' + w.join(' AND ');
+      q += ' ORDER BY created_at DESC LIMIT 100';
+      const requests = p.length ? (await env.DB.prepare(q).bind(...p).all()).results : (await env.DB.prepare(q).all()).results;
+
+      const stats = await env.DB.prepare("SELECT COUNT(*) as total, SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending, SUM(CASE WHEN status='accepted' THEN 1 ELSE 0 END) as accepted, SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as completed, SUM(CASE WHEN direction='inbound' THEN 1 ELSE 0 END) as inbound, SUM(CASE WHEN direction='outbound' THEN 1 ELSE 0 END) as outbound, COALESCE(SUM(budget),0) as total_budget FROM br_collab_requests").first();
+
+      return json({ requests: requests.map(r => ({...r, deliverables: JSON.parse(r.deliverables||'[]')})), total: requests.length, stats });
+    }
+
+    // ── Get single collab request ──
+    const collabMatch = path.match(/^\/api\/collab-requests\/([^/]+)$/);
+    if (collabMatch && method === 'GET') {
+      const req = await env.DB.prepare('SELECT * FROM br_collab_requests WHERE id=?').bind(collabMatch[1]).first();
+      if (!req) return json({ error: 'Not found' }, 404);
+      return json({ request: { ...req, deliverables: JSON.parse(req.deliverables||'[]') } });
+    }
+
+    // ── Update collab request status ──
+    if (collabMatch && method === 'PUT') {
+      const body = await request.json();
+      const sets = []; const vals = [];
+      for (const field of ['brand_name','contact_name','contact_email','platform','direction','status','type','description','terms','notes','agent_id','deadline']) {
+        if (body[field] !== undefined) { sets.push(`${field}=?`); vals.push(body[field]); }
+      }
+      if (body.deliverables) { sets.push('deliverables=?'); vals.push(JSON.stringify(body.deliverables)); }
+      if (body.budget !== undefined) { sets.push('budget=?'); vals.push(body.budget); }
+      if (sets.length === 0) return json({ error: 'nothing to update' }, 400);
+      sets.push("updated_at=datetime('now')");
+      vals.push(collabMatch[1]);
+      await env.DB.prepare(`UPDATE br_collab_requests SET ${sets.join(',')} WHERE id=?`).bind(...vals).run();
+      await log(env.DB, 'collab_updated', collabMatch[1], `Collab request updated: ${body.status || 'modified'}`, null);
+      return json({ ok: true, id: collabMatch[1] });
+    }
+
+    // ── Delete collab request ──
+    if (collabMatch && method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM br_collab_requests WHERE id=?').bind(collabMatch[1]).run();
+      return json({ ok: true, deleted: collabMatch[1] });
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // 24. SOCIAL PROOF
+    // ═══════════════════════════════════════════════════════
+
+    // ── Add social proof (testimonial, case study, metric badge) ──
+    if (path === '/api/social-proof' && method === 'POST') {
+      const body = await request.json();
+      if (!body.content) return json({ error: 'content required' }, 400);
+      const id = crypto.randomUUID();
+      const type = body.type || 'testimonial';
+
+      await env.DB.prepare('INSERT INTO br_social_proof (id,type,author_name,author_handle,author_title,content,rating,platform,source_url,metric_label,metric_value,badge_style,featured,approved,campaign_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+        .bind(id, type, body.author_name||'', body.author_handle||'', body.author_title||'', body.content, body.rating||5, body.platform||'', body.source_url||'', body.metric_label||'', body.metric_value||'', body.badge_style||'default', body.featured?1:0, body.approved!==false?1:0, body.campaign_id||null).run();
+      await log(env.DB, 'social_proof_added', id, `Social proof (${type}): ${body.author_name||'anonymous'}`, null);
+
+      // Generate embed code
+      const embedCode = `<div class="br-social-proof" data-id="${id}" data-type="${type}"><blockquote><p>${body.content.replace(/</g,'&lt;')}</p><cite>${body.author_name||''}${body.author_title ? ', ' + body.author_title : ''}</cite></blockquote></div><script src="https://backroad.blackroad.io/embed.js" async></script>`;
+
+      await env.DB.prepare('UPDATE br_social_proof SET embed_code=? WHERE id=?').bind(embedCode, id).run();
+
+      return json({ id, type, author: body.author_name||'anonymous', rating: body.rating||5, embed_code: embedCode, approved: body.approved !== false }, 201);
+    }
+
+    // ── List social proof ──
+    if (path === '/api/social-proof' && method === 'GET') {
+      const type = url.searchParams.get('type');
+      const featured = url.searchParams.get('featured');
+      const format = url.searchParams.get('format'); // json (default) or embed
+      let q = 'SELECT * FROM br_social_proof WHERE approved=1'; const p = [];
+      if (type) { q += ' AND type=?'; p.push(type); }
+      if (featured === 'true') { q += ' AND featured=1'; }
+      q += ' ORDER BY featured DESC, rating DESC, created_at DESC LIMIT 100';
+      const items = p.length ? (await env.DB.prepare(q).bind(...p).all()).results : (await env.DB.prepare(q).all()).results;
+
+      // Stats
+      const stats = await env.DB.prepare("SELECT COUNT(*) as total, AVG(rating) as avg_rating, SUM(CASE WHEN type='testimonial' THEN 1 ELSE 0 END) as testimonials, SUM(CASE WHEN type='case_study' THEN 1 ELSE 0 END) as case_studies, SUM(CASE WHEN type='metric' THEN 1 ELSE 0 END) as metrics, SUM(CASE WHEN featured=1 THEN 1 ELSE 0 END) as featured_count FROM br_social_proof WHERE approved=1").first();
+
+      if (format === 'embed') {
+        // Return embeddable HTML widget
+        const widget = `<!DOCTYPE html><html><head><style>
+.br-sp{font-family:system-ui,sans-serif;max-width:600px;margin:0 auto}.br-sp-item{border:1px solid #1a1a1a;border-radius:8px;background:#0a0a0a;padding:20px;margin:12px 0;color:#f5f5f5}.br-sp-content{font-size:14px;line-height:1.6;margin-bottom:12px}.br-sp-author{font-size:12px;color:#737373}.br-sp-rating{color:#f5a623;margin-bottom:8px}.br-sp-metric{font-size:32px;font-weight:700;color:#00D4FF}.br-sp-label{font-size:12px;color:#737373;text-transform:uppercase;letter-spacing:.05em}
+</style></head><body><div class="br-sp">${items.map(i => {
+          if (i.type === 'metric') return `<div class="br-sp-item"><div class="br-sp-metric">${i.metric_value}</div><div class="br-sp-label">${i.metric_label}</div></div>`;
+          return `<div class="br-sp-item">${i.rating ? `<div class="br-sp-rating">${'*'.repeat(i.rating)}</div>` : ''}<div class="br-sp-content">${i.content}</div><div class="br-sp-author">${i.author_name||''}${i.author_title ? ', ' + i.author_title : ''}</div></div>`;
+        }).join('')}</div></body></html>`;
+        return new Response(widget, { headers: { ...CORS, 'Content-Type': 'text/html;charset=UTF-8' } });
+      }
+
+      return json({ items, total: items.length, stats: { ...stats, avg_rating: Math.round((stats.avg_rating||0) * 10) / 10 } });
+    }
+
+    // ── Get single social proof ──
+    const proofMatch = path.match(/^\/api\/social-proof\/([^/]+)$/);
+    if (proofMatch && method === 'GET') {
+      const item = await env.DB.prepare('SELECT * FROM br_social_proof WHERE id=?').bind(proofMatch[1]).first();
+      if (!item) return json({ error: 'Not found' }, 404);
+      return json({ item });
+    }
+
+    // ── Update social proof ──
+    if (proofMatch && method === 'PUT') {
+      const body = await request.json();
+      const sets = []; const vals = [];
+      for (const field of ['type','author_name','author_handle','author_title','content','platform','source_url','metric_label','metric_value','badge_style','campaign_id']) {
+        if (body[field] !== undefined) { sets.push(`${field}=?`); vals.push(body[field]); }
+      }
+      if (body.rating !== undefined) { sets.push('rating=?'); vals.push(body.rating); }
+      if (body.featured !== undefined) { sets.push('featured=?'); vals.push(body.featured?1:0); }
+      if (body.approved !== undefined) { sets.push('approved=?'); vals.push(body.approved?1:0); }
+      if (sets.length === 0) return json({ error: 'nothing to update' }, 400);
+      sets.push("updated_at=datetime('now')");
+      vals.push(proofMatch[1]);
+      await env.DB.prepare(`UPDATE br_social_proof SET ${sets.join(',')} WHERE id=?`).bind(...vals).run();
+      return json({ ok: true, id: proofMatch[1] });
+    }
+
+    // ── Delete social proof ──
+    if (proofMatch && method === 'DELETE') {
+      await env.DB.prepare('DELETE FROM br_social_proof WHERE id=?').bind(proofMatch[1]).run();
+      return json({ ok: true, deleted: proofMatch[1] });
+    }
+
+    // ── Generate social proof summary (AI) ──
+    if (path === '/api/social-proof/summary' && method === 'GET') {
+      const items = (await env.DB.prepare("SELECT * FROM br_social_proof WHERE approved=1 ORDER BY rating DESC LIMIT 20").all()).results;
+      if (items.length === 0) return json({ summary: 'No social proof collected yet. Add testimonials, case studies, or metrics with POST /api/social-proof.', items: [] });
+
+      let summary = '';
+      try {
+        const aiR = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+          messages: [
+            { role: 'system', content: 'You are a marketing analyst. Summarize these social proof items into a compelling 2-3 sentence summary that could be used on a landing page. Be specific about numbers and sentiment. Return ONLY the summary text.' },
+            { role: 'user', content: JSON.stringify(items.map(i => ({ type: i.type, content: i.content.slice(0, 100), rating: i.rating, author: i.author_name }))) },
+          ], max_tokens: 150,
+        });
+        if (aiR.response) summary = aiR.response.trim();
+      } catch { summary = `${items.length} pieces of social proof collected with an average rating of ${(items.reduce((s,i)=>s+i.rating,0)/items.length).toFixed(1)}/5.`; }
+
+      return json({ summary, total: items.length, avg_rating: Math.round((items.reduce((s,i)=>s+i.rating,0)/items.length)*10)/10, top_testimonials: items.filter(i=>i.type==='testimonial').slice(0,3) });
+    }
+
     return json({ error: 'Not found', service: 'backroad', endpoints: [
       '/api/health','/api/stats','/api/agents','/api/posts','/api/posts/:id','/api/posts/:id/echo',
       '/api/reply','/api/ghost','/api/pulse','/api/feed','/api/campaigns','/api/replies/pending',
@@ -1990,14 +2850,23 @@ export default {
       '/api/inbox','/api/inbox/:id/read','/api/inbox/:id/star','/api/inbox/:id/archive','/api/inbox/:id/reply','/api/inbox/mark-all-read',
       '/api/score',
       '/api/viral','/api/viral/:id/ack',
-      '/api/roi','/api/roi/:id'
+      '/api/roi','/api/roi/:id',
+      '/api/story','/api/story/:id',
+      '/api/memes','/api/memes/templates','/api/memes/:id',
+      '/api/listening','/api/listening/:id','/api/listening/mention','/api/listening/scan',
+      '/api/ugc','/api/ugc/:id','/api/ugc/:id/approve','/api/ugc/:id/feature','/api/ugc/:id/grant-rights','/api/ugc/:id/reject',
+      '/api/auto-engage','/api/auto-engage/trigger','/api/auto-engage/:id/activate','/api/auto-engage/:id/deactivate','/api/auto-engage/:id',
+      '/api/insights','/api/insights/history',
+      '/api/collab-requests','/api/collab-requests/:id',
+      '/api/social-proof','/api/social-proof/:id','/api/social-proof/summary'
     ] }, 404);
   },
 
   // ── Cron: Auto-publish scheduled posts ──
   async scheduled(event, env, ctx) {
     try {
-      if (!dbReady) { await ensureTables(env.DB); await ensureNewTables(env.DB); dbReady = true; }
+      await ensureTables(env.DB);
+      await ensureNewTables(env.DB);
       const due = await env.DB.prepare(
         "SELECT * FROM br_posts WHERE status='scheduled' AND schedule_at <= datetime('now')"
       ).all();
