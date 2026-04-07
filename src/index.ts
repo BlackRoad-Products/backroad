@@ -13,7 +13,7 @@ function page(): Response {
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#030303;--card:#0a0a0a;--border:#111;--text:#f0f0f0;--sub:#444;--pink:#FF1D6C;--grad:linear-gradient(135deg,#FF1D6C,#FF6B35,#CC00AA)}
+:root{--bg:#030303;--card:#0a0a0a;--border:#111;--text:#f0f0f0;--sub:#444;--pink:#FF2255;--grad:linear-gradient(135deg,#FF2255,#FF6B2B,#FF00D4)}
 html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif}
 .grad-bar{height:2px;background:var(--grad)}
 .wrap{max-width:900px;margin:0 auto;padding:32px 20px}
@@ -35,7 +35,7 @@ textarea{min-height:80px;resize:vertical}
 .recent-card{grid-column:1/-1}
 .type-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .type{padding:4px 10px;background:#0d0d0d;border:1px solid var(--border);border-radius:4px;font-size:.68rem;cursor:pointer;color:var(--sub);transition:all .15s}
-.type.selected{border-color:#FF6B35;color:#FF6B35}
+.type.selected{border-color:#FF6B2B;color:#FF6B2B}
 @media(max-width:600px){.grid{grid-template-columns:1fr}}
 </style></head><body>
 <div class="grad-bar"></div>
