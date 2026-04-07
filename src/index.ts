@@ -8,8 +8,15 @@ const CONTENT_TYPES = ["announcement","thread","insight","research","milestone",
 
 function page(): Response {
   const html=`<!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"><title>BackRoad — Content Engine</title>
-<meta name="description" content="BackRoad — the BlackRoad OS content and social engine.">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BackRoad — Content Engine</title>
+<meta name="description" content="Content generation and social distribution engine for BlackRoad OS.">
+<link rel="canonical" href="https://backroad.blackroad.io/">
+<meta property="og:title" content="BackRoad — Content Engine">
+<meta property="og:description" content="Content generation and social distribution engine for BlackRoad OS.">
+<meta property="og:url" content="https://backroad.blackroad.io/">
+<meta property="og:type" content="website">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"BackRoad","url":"https://backroad.blackroad.io/","description":"Content generation and social distribution engine for BlackRoad OS.","applicationCategory":"WebApplication","publisher":{"@type":"Organization","name":"BlackRoad OS, Inc.","url":"https://blackroad.io"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
