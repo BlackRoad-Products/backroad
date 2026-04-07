@@ -42,7 +42,7 @@ textarea{min-height:80px;resize:vertical}
 .recent-card{grid-column:1/-1}
 .type-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .type{padding:4px 10px;background:#0d0d0d;border:1px solid var(--border);border-radius:4px;font-size:.68rem;cursor:pointer;color:var(--sub);transition:all .15s}
-.type.selected{border-color:#FF6B2B;color:#FF6B2B}
+.type.selected{border-color:#FF6B2B;color:#ccc}
 @media(max-width:600px){.grid{grid-template-columns:1fr}}
 </style></head><body>
 <div class="grad-bar"></div>
