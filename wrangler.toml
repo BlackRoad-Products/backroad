@@ -1,19 +1,18 @@
 name = "backroad-blackroad"
-main = "src/worker.js"
-compatibility_date = "2026-03-31"
-
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
 [[routes]]
 pattern = "backroad.blackroad.io/*"
 zone_name = "blackroad.io"
-
-[[routes]]
-pattern = "social.blackroad.io/*"
-zone_name = "blackroad.io"
-
-[ai]
-binding = "AI"
-
+[vars]
+ENVIRONMENT = "production"
+SERVICE_NAME = "backroad"
+VERSION = "2.0.0"
+[[kv_namespaces]]
+binding = "STORE"
+id = "b68f803e25354dceb4d3eea13e4c6f89"
 [[d1_databases]]
 binding = "DB"
-database_name = "backroad-social"
-database_id = "bf074bed-fa02-40b9-af74-789255c961f7"
+database_name = "blackroad-os-main"
+database_id = "e2c6dcd9-c21a-48ac-8807-7b3a6881c4f7"
