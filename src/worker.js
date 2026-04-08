@@ -4237,6 +4237,40 @@ ${guideUrls}
       return json({posts: posts.results||[], feed:'following', user:userId});
     }
 
+    // ─── Social Bot Endpoints (Bluesky + Mastodon patterns) ───
+    // POST /api/bot/bluesky — post to Bluesky via AT Protocol
+    if (path === '/api/bot/bluesky' && method === 'POST') {
+      const body = await request.json();
+      if (!body.text) return json({error:'text required'});
+      const handle = body.handle || env.BSKY_HANDLE || '';
+      const password = body.password || env.BSKY_APP_PASSWORD || '';
+      if (!handle || !password) return json({error:'Configure BSKY_HANDLE and BSKY_APP_PASSWORD as worker secrets', setup:'wrangler secret put BSKY_HANDLE && wrangler secret put BSKY_APP_PASSWORD'});
+      try {
+        const session = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:handle,password})}).then(r=>r.json());
+        const result = await fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {method:'POST',headers:{'Authorization':'Bearer '+session.accessJwt,'Content-Type':'application/json'},body:JSON.stringify({repo:session.did,collection:'app.bsky.feed.post',record:{'$type':'app.bsky.feed.post',text:body.text.slice(0,300),createdAt:new Date().toISOString()}})}).then(r=>r.json());
+        return json({ok:true,platform:'bluesky',uri:result.uri});
+      } catch(e) { return json({error:'Bluesky post failed',detail:e.message}); }
+    }
+    // POST /api/bot/mastodon — post to Mastodon
+    if (path === '/api/bot/mastodon' && method === 'POST') {
+      const body = await request.json();
+      if (!body.text) return json({error:'text required'});
+      const instance = body.instance || env.MASTODON_INSTANCE || '';
+      const token = body.token || env.MASTODON_TOKEN || '';
+      if (!instance || !token) return json({error:'Configure MASTODON_INSTANCE and MASTODON_TOKEN as worker secrets'});
+      try {
+        const result = await fetch(`https://${instance}/api/v1/statuses`, {method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({status:body.text.slice(0,500),visibility:body.visibility||'public'})}).then(r=>r.json());
+        return json({ok:true,platform:'mastodon',id:result.id,url:result.url});
+      } catch(e) { return json({error:'Mastodon post failed',detail:e.message}); }
+    }
+    // GET /api/bot/status — check bot configuration
+    if (path === '/api/bot/status') {
+      return json({
+        bluesky: { configured: !!(env.BSKY_HANDLE && env.BSKY_APP_PASSWORD), handle: env.BSKY_HANDLE ? env.BSKY_HANDLE.slice(0,3)+'***' : null },
+        mastodon: { configured: !!(env.MASTODON_INSTANCE && env.MASTODON_TOKEN), instance: env.MASTODON_INSTANCE || null },
+      });
+    }
+
     return json({ error: 'Not found', service: 'backroad', endpoints: [
       '/api/health','/api/stats','/api/agents','/api/posts','/api/posts/:id','/api/posts/:id/echo',
       '/api/reply','/api/ghost','/api/pulse','/api/feed','/api/campaigns','/api/replies/pending',
