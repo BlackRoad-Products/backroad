@@ -4186,6 +4186,57 @@ ${guideUrls}
       return json({topic:topic||'ai',hashtags:tags});
     }
 
+    // ─── Follow System ───
+    if (path === '/api/follow' && method === 'POST') {
+      const body = await request.json();
+      if (!body.follower || !body.following) return json({error:'follower and following required'},400);
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS follows (follower_id TEXT, following_id TEXT, created_at TEXT DEFAULT (datetime('now')), PRIMARY KEY(follower_id,following_id))").run();
+      await env.DB.prepare('INSERT OR IGNORE INTO follows (follower_id, following_id) VALUES (?,?)').bind(body.follower, body.following).run();
+      return json({ok:true, follower:body.follower, following:body.following});
+    }
+    if (path === '/api/unfollow' && method === 'POST') {
+      const body = await request.json();
+      await env.DB.prepare('DELETE FROM follows WHERE follower_id=? AND following_id=?').bind(body.follower, body.following).run();
+      return json({ok:true});
+    }
+    if (path.startsWith('/api/following/')) {
+      const handle = path.split('/')[3];
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS follows (follower_id TEXT, following_id TEXT, created_at TEXT DEFAULT (datetime('now')), PRIMARY KEY(follower_id,following_id))").run();
+      const r = await env.DB.prepare('SELECT following_id, created_at FROM follows WHERE follower_id=? ORDER BY created_at DESC LIMIT 100').bind(handle).all();
+      return json({handle, following: r.results||[]});
+    }
+    if (path.startsWith('/api/followers/')) {
+      const handle = path.split('/')[3];
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS follows (follower_id TEXT, following_id TEXT, created_at TEXT DEFAULT (datetime('now')), PRIMARY KEY(follower_id,following_id))").run();
+      const r = await env.DB.prepare('SELECT follower_id, created_at FROM follows WHERE following_id=? ORDER BY created_at DESC LIMIT 100').bind(handle).all();
+      return json({handle, followers: r.results||[]});
+    }
+    // ─── Presence System ───
+    if (path === '/api/presence' && method === 'POST') {
+      const body = await request.json();
+      if (!body.user_id) return json({error:'user_id required'},400);
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS user_presence (user_id TEXT PRIMARY KEY, status TEXT, updated_at TEXT DEFAULT (datetime('now')))").run();
+      await env.DB.prepare("INSERT OR REPLACE INTO user_presence (user_id, status) VALUES (?,?)").bind(body.user_id, body.status||'online').run();
+      return json({ok:true});
+    }
+    if (path === '/api/presence' && method === 'GET') {
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS user_presence (user_id TEXT PRIMARY KEY, status TEXT, updated_at TEXT DEFAULT (datetime('now')))").run();
+      const r = await env.DB.prepare("SELECT * FROM user_presence WHERE updated_at > datetime('now','-30 minutes') ORDER BY updated_at DESC").all();
+      return json({presence: r.results||[]});
+    }
+    // ─── Following Feed ───
+    if (path === '/api/feed/following') {
+      const userId = new URL(request.url).searchParams.get('user');
+      if (!userId) return json({error:'user param required'},400);
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS follows (follower_id TEXT, following_id TEXT, created_at TEXT DEFAULT (datetime('now')), PRIMARY KEY(follower_id,following_id))").run();
+      const following = await env.DB.prepare('SELECT following_id FROM follows WHERE follower_id=?').bind(userId).all();
+      const ids = (following.results||[]).map(f=>f.following_id);
+      if (!ids.length) return json({posts:[],message:'Follow someone to see their posts here'});
+      const placeholders = ids.map(()=>'?').join(',');
+      const posts = await env.DB.prepare(`SELECT * FROM posts WHERE author IN (${placeholders}) ORDER BY created_at DESC LIMIT 30`).bind(...ids).all();
+      return json({posts: posts.results||[], feed:'following', user:userId});
+    }
+
     return json({ error: 'Not found', service: 'backroad', endpoints: [
       '/api/health','/api/stats','/api/agents','/api/posts','/api/posts/:id','/api/posts/:id/echo',
       '/api/reply','/api/ghost','/api/pulse','/api/feed','/api/campaigns','/api/replies/pending',
